@@ -102,6 +102,16 @@ Output:
 url/url-parse.js type=one n=1: 1663.74402
 ```
 
+The higher the end number, the faster the benchmark.
+
+Running the `compare` script, use it:
+
+```sh
+$ iojs benchmark/compare ./new-iojs ./old-iojs -- querystring querystring-parse
+```
+
+For `benchmark/querystring/querystring-parse.js`.
+
 ## How to write a benchmark test
 
 The benchmark tests are grouped by types. Each type corresponds to a subdirectory,
@@ -113,7 +123,7 @@ buffers/buffer-slice.js.
 ### The code snippet
 
 ```js
-var common = require('../common.js'); // Load the test runner
+var common = require('../common'); // Load the test runner
 
 var SlowBuffer = require('buffer').SlowBuffer;
 
