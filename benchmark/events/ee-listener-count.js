@@ -1,20 +1,19 @@
-var common = require('../common.js');
 var EventEmitter = require('events').EventEmitter;
+var Benchmark = require('benchmark');
 
-var bench = common.createBenchmark(main, {n: [5e7]});
+var ee = new EventEmitter();
+for (var i = 0; i < 10; i++)
+  ee.on('dummy', function() {});
 
-function main(conf) {
-  var n = conf.n | 0;
-
-  var ee = new EventEmitter();
-  var listenerCount = EventEmitter.listenerCount;
-
-  for (var k = 0; k < 10; k += 1)
-    ee.on('dummy', function() {});
-
-  bench.start();
-  for (var i = 0; i < n; i += 1) {
-    var r = listenerCount(ee, 'dummy');
-  }
-  bench.end(n);
-}
+var suite = new Benchmark.Suite();
+suite
+  .add('basic', function() {
+    var r = EventEmitter.listenerCount(ee, 'dummy');
+  })
+  .on('cycle', function(event) {
+    console.log(String(event.target));
+  })
+  .on('complete', function() {
+    console.log('Fastest: ' + this.filter('fastest').pluck('name'));
+  })
+  .run();
