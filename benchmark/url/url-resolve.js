@@ -1,31 +1,21 @@
-var common = require('../common.js');
 var url = require('url');
 var v8 = require('v8');
+var Benchmark = require('benchmark');
 
-var bench = common.createBenchmark(main, {
-  type: ['one'],
-  n: [1e5],
-});
+// Force-optimize url.resolve() so that the benchmark doesn't get
+// disrupted by the optimizer kicking in halfway through.
+v8.setFlagsFromString('--allow_natives_syntax');
+eval('%OptimizeFunctionOnNextCall(url.resolve)');
 
-function main(conf) {
-  var type = conf.type;
-  var n = conf.n | 0;
-
-  var inputs = {
-    one: ['http://example.com/', '../../../../../etc/passwd'],
-  };
-  var input = inputs[type] || [];
-
-  // Force-optimize url.resolve() so that the benchmark doesn't get
-  // disrupted by the optimizer kicking in halfway through.
-  for (var name in inputs)
-    url.resolve(inputs[name][0], inputs[name][1]);
-
-  v8.setFlagsFromString('--allow_natives_syntax');
-  eval('%OptimizeFunctionOnNextCall(url.resolve)');
-
-  bench.start();
-  for (var i = 0; i < n; i += 1)
-    url.resolve(input[0], input[1]);
-  bench.end(n);
-}
+var suite = new Benchmark.Suite();
+suite
+  .add('one', function() {
+    url.resolve('http://example.com/', '../../../../../etc/passwd');
+  })
+  .on('cycle', function(event) {
+    console.log(String(event.target));
+  })
+  .on('complete', function() {
+    console.log('Fastest: ' + this.filter('fastest').pluck('name'));
+  })
+  .run();
