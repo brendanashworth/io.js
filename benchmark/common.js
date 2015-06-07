@@ -13,6 +13,7 @@ if (['default', 'csv', 'silent'].indexOf(outputFormat) == -1) {
 }
 
 exports.PORT = process.env.PORT || 12346;
+exports.PIPE = process.env.PIPE || path.resolve(__dirname, './server.pipe');
 
 // If this is the main module, then run the benchmarks
 if (module === require.main) {
