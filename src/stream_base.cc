@@ -207,23 +207,24 @@ int StreamBase::WriteBuffer(const FunctionCallbackInfo<Value>& args) {
   const char* data = Buffer::Data(args[1]);
   size_t length = Buffer::Length(args[1]);
 
-  WriteWrap* req_wrap;
+  req_wrap_obj->Set(env->bytes_string(),
+                    Integer::NewFromUnsigned(env->isolate(), length));
+
   uv_buf_t buf;
   buf.base = const_cast<char*>(data);
   buf.len = length;
+  uv_buf_t* bufs = &buf;
 
   // Try writing immediately without allocation
-  uv_buf_t* bufs = &buf;
   size_t count = 1;
   int err = DoTryWrite(&bufs, &count);
-  if (err != 0)
-    goto done;
-  if (count == 0)
-    goto done;
-  CHECK_EQ(count, 1);
+  if (count == 0) {
+    // Successfully wrote.
+    return err;
+  }
 
   // Allocate, or write rest
-  req_wrap = WriteWrap::New(env, req_wrap_obj, this, AfterWrite);
+  WriteWrap* req_wrap = WriteWrap::New(env, req_wrap_obj, this, AfterWrite);
 
   err = DoWrite(req_wrap, bufs, count, nullptr);
   req_wrap_obj->Set(env->async(), True(env->isolate()));
@@ -231,14 +232,6 @@ int StreamBase::WriteBuffer(const FunctionCallbackInfo<Value>& args) {
   if (err)
     req_wrap->Dispose();
 
- done:
-  const char* msg = Error();
-  if (msg != nullptr) {
-    req_wrap_obj->Set(env->error_string(), OneByteString(env->isolate(), msg));
-    ClearError();
-  }
-  req_wrap_obj->Set(env->bytes_string(),
-                    Integer::NewFromUnsigned(env->isolate(), length));
   return err;
 }
 
