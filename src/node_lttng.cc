@@ -1,9 +1,7 @@
-#include "util.h"
+#include "node_lttng.h"
 
 #ifdef HAVE_LTTNG
-#include "node_lttng.h"
 #include "node_lttng_provider.h"
-#include <string.h>
 #else
 #define NODE_HTTP_SERVER_REQUEST(arg0, arg1)
 #define NODE_HTTP_SERVER_REQUEST_ENABLED() (0)
@@ -23,6 +21,10 @@
 
 #include "env.h"
 #include "env-inl.h"
+
+#include "util.h"
+
+#include <string.h>
 
 namespace node {
 
