@@ -94,9 +94,14 @@ test/gc/node_modules/weak/build/Release/weakref.node: $(NODE_EXE)
 		--directory="$(shell pwd)/test/gc/node_modules/weak" \
 		--nodedir="$(shell pwd)"
 
-build-addons: $(NODE_EXE)
+# Generates the addons from the addons documentation. This must be a prerequisite
+# of build-addons because make caches $(wildcard) folders.
+generate-addons: $(NODE_EXE)
 	rm -rf test/addons/doc-*/
-	$(NODE) tools/doc/addon-verify.js
+	$(NODE) tools/doc/addon-tests.js
+
+# Builds the addons with node-gyp.
+build-addons: $(NODE_EXE) generate-addons
 	$(foreach dir, \
 			$(sort $(dir $(wildcard test/addons/*/*.gyp))), \
 			$(NODE) deps/npm/node_modules/node-gyp/bin/node-gyp rebuild \

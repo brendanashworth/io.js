@@ -1,3 +1,6 @@
+// This script generates the tests in test/addons from the code blocks in
+// doc/addons.markdown.
+
 var fs = require('fs');
 var path = require('path');
 var marked = require('marked');
@@ -14,25 +17,19 @@ var id = 0;
 // Just to make sure that all examples will be processed
 tokens.push({ type: 'heading' });
 
-var oldDirs = fs.readdirSync(verifyDir);
-oldDirs = oldDirs.filter(function(dir) {
-  return /^doc-/.test(dir);
-}).map(function(dir) {
-  return path.resolve(verifyDir, dir);
-});
-
 for (var i = 0; i < tokens.length; i++) {
   var token = tokens[i];
+
+  // When we encounter a heading, flush files
   if (token.type === 'heading') {
     if (files && Object.keys(files).length !== 0) {
-      verifyFiles(files, function(err) {
+      writeFiles(files, function(err) {
         if (err)
-          console.log(err);
-        else
-          console.log('done');
+          throw err;
       });
     }
     files = {};
+  // When we encounter a code block, add to files
   } else if (token.type === 'code') {
     var match = token.text.match(/^\/\/\s+(.*\.(?:cc|h|js))[\r\n]/);
     if (match === null)
@@ -41,18 +38,10 @@ for (var i = 0; i < tokens.length; i++) {
   }
 }
 
-function once(fn) {
-  var once = false;
-  return function() {
-    if (once)
-      return;
-    once = true;
-    fn.apply(this, arguments);
-  };
-}
-
-function verifyFiles(files, callback) {
+function writeFiles(files, callback) {
   var dir = path.resolve(verifyDir, 'doc-' + id++);
+
+  console.log('generating', path.relative(process.cwd(), dir));
 
   files = Object.keys(files).map(function(name) {
     return {
@@ -78,17 +67,7 @@ function verifyFiles(files, callback) {
   fs.mkdir(dir, function() {
     // Ignore errors
 
-    var waiting = files.length;
     for (var i = 0; i < files.length; i++)
-      fs.writeFile(files[i].path, files[i].content, next);
-
-    var done = once(callback);
-    function next(err) {
-      if (err)
-        return done(err);
-
-      if (--waiting === 0)
-        done();
-    }
+      fs.writeFile(files[i].path, files[i].content, callback);
   });
 }
